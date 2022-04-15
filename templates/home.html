@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+<!--    <link-->
+<!--            rel="stylesheet"-->
+<!--            href="{{ url_for('static', filename='home.css') }}"-->
+<!--    />-->
+    <style>
+        body {
+        background-image: url("./static/img/back1.jpeg");
+        height: 100vh;
+        width:100%;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: cover;
+      }
+      button{
+      margin:10px;
+      padding:10px;
+      }
+    </style>
+</head>
+<body>
+
+<center><h1>MACHINE LEARNING APPROACH FOR BRAILLE TO ENGLISH TRANSLATION</h1></center>
+<center><h3><u>BY</u></h3></center>
+<center><h2>SUJITH SIVASANKARAN</h2></center>
+<center><h2>KRITIKA AGRAWAL</h2></center>
+<center><a  href="{{url_for('index')}}"><button href="{{url_for('index')}}; border:20px solid black;">
+
+    BRAILLE TO ENGLISH FROM IMAGE
+</button></a></center>
+<center><a  href="{{url_for('ttob')}}"><button href="{{url_for('index')}}; border:20px solid black;">
+
+    TEXT TO BRAILLE
+
+</button></a></center>
+
+
+
+</body>
+</html>

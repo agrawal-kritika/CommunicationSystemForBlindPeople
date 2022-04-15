@@ -1,0 +1,58 @@
+<html xmlns="http://www.w3.org/1999/html">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign Up Form</title>
+    <style>
+      body {
+        background-image: url("{{ url_for('static', filename='img/background.jpeg') }}");
+        height: 100%;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: cover;
+      }
+
+    </style>
+  </head>
+  <body>
+    <div class="row top10">
+      <div class="col-md-12">
+        <center><div>
+        <form action="{{url_for('t_to_b')}}" method="post" style="border:none; width:50%; float:left;">
+          <center><label>ENGLISH TO BRAILLE</label>
+          </center>
+          <fieldset style="border:none;">
+            <div class="flex-left">
+
+              <center><textarea rows = "15" cols = "150" name = "Text" ></textarea></center>
+              <center><button type="SUBMIT" style="margin-top:30px;">TO BRAILLE</button></center>
+            </div>
+          </fieldset>
+        </form>
+        <form action="{{url_for('b_to_t')}}" method="post" style="border:none; width:50%;float:left;">
+        <center><label>BRAILLE TO ENGLISH</label>
+        </center>
+        <fieldset style="border:none;">
+          <div class="flex-left">
+
+            <center><textarea rows = "15" cols = "150" name = "Text" ></textarea></center>
+            <center><button type="SUBMIT" style="margin-top:30px;">TO ENGLISH</button></center>
+          </div>
+        </fieldset>
+        </form>
+        </div></center>
+        <p style="font-size: 80px; width:100%;padding:10px;">
+          {% with messages = get_flashed_messages() %}
+          {% if messages %}
+          {% for message in messages %}
+          {% autoescape false %}
+          {{ message }}
+          {% endautoescape %}
+          {% endfor %}
+        {% endif %}
+        {% endwith %}
+        </p>
+      </div>
+    </div>
+  </body>
+</html>
