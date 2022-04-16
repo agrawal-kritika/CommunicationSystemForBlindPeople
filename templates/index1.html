@@ -1,0 +1,46 @@
+<html>
+<head>
+<title>Python Flask Upload and display image</title>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" />
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+</head>
+<body>
+<p><h1 align="center">ENGLISH TEXT TO BRAILLE FROM IMAGE</h1></p>
+<div class="container">
+<div class="row">
+    <h2>Select a file to upload</h2>
+
+
+    <form method="post" action="/image_text" enctype="multipart/form-data">
+        <dl>
+            <p>
+                <input type="file" name="file" class="form-control" autocomplete="off" required>
+            </p>
+        </dl>
+        <p>
+            <input type="submit" value="Submit" class="btn btn-info">
+        </p>
+    </form>
+
+     <p style = "font-size: 80px; width:100%;padding:10px; margin-left:30px">
+         {% with messages = get_flashed_messages() %}
+         {% if messages %}
+         {% for message in messages %}
+         {% autoescape false %}
+         {{ message }}
+         {% endautoescape %}
+         {% endfor %}
+         {% endif %}
+         {% endwith %}
+    </p>
+
+    {% if filename %}
+        <div>
+            <img src="{{ url_for('display_image', filename=filename) }}">
+        </div>
+    {% endif %}
+
+</div>
+</div>
+</body>
+</html>

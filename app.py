@@ -1,7 +1,7 @@
 
 import requests
 import matplotlib.image as mpimg
-
+from PIL import Image
 from flask import Flask, flash, request, redirect, url_for, render_template
 # import urllib.request
 import os
@@ -10,10 +10,12 @@ import cv2
 import tensorflow as tf
 import numpy as np
 import pyttsx3
-
+from pytesseract import pytesseract
 
 app = Flask(__name__)
-# engine = pyttsx3.init()
+run_loop_flag = 0
+engine = pyttsx3.init()
+engine.setProperty('rate', 180)
 model = tf.keras.models.load_model("model_braille_v17.h5")
 space_model = tf.keras.models.load_model("model_braille_space_ignore.h5")
 UPLOAD_FOLDER = 'static/uploads/'
@@ -30,29 +32,32 @@ brailles = ['⠀', '⠼⠚', '⠼⠁',
             '⠧', '⠺', '⠭', '⠽', '⠵', '⠠', '⠠']
 
 number = {'a':'1','b':'2','c':'3','d':'4','e':'5','f':'6','g':'7','h':'8','i':'9','j':'0'}
+
 app.secret_key = "secret key"
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
 ALLOWED_EXTENSIONS = set(['png','jpg'])
 def text_to_braille(org_text):
-    if(len(org_text)>0):
-            l = org_text.split("\n")
-            s =""
-            for text in l:
-                if(text[-1] == "\r"):
-                    print(text)
-                    text = text[:-1]
-                if(text[-4:] == "<br>"):
-                    print(text)
-                    text = text[:-4]
-                for i in text:
-                    if(i.isupper()):
-                        s += '⠠'
-                        s = s + str(brailles[asciicodes.index(i.lower())])
-                    else:
-                        s = s + str(brailles[asciicodes.index(i)])
-                s += "<br>"
+
+    l = org_text.split("\n")
+    s =""
+    for text in l:
+        if(len(text)>0):
+            if(text[-1] == "\r"):
+#                     print(text)
+                text = text[:-1]
+        if(len(text)>3):
+            if(text[-4:] == "<br>"):
+#                     print(text)
+                text = text[:-4]
+        for i in text:
+            if(i.isupper()):
+                s += '⠠'
+                s = s + str(brailles[asciicodes.index(i.lower())])
+            else:
+                s = s + str(brailles[asciicodes.index(i)])
+        s += "<br>"
     return(s)
 
 
@@ -63,10 +68,11 @@ def braille_to_english(org_text):
     s =""
     for text in l:
         if(text[-1] == "\r"):
-            print(text)
+#             print(text)
             text = text[:-1]
+
         if(text[-4:] == "<br>"):
-            print(text)
+#             print(text)
             text = text[:-4]
         for i in text:
             if(i == "⠠"):
@@ -106,6 +112,10 @@ def index():
 def ttob():
     return render_template('ttob.html')
 
+@app.route('/index1/', methods=['POST','GET'])
+def index1():
+    return render_template('index1.html')
+
 @app.route('/', methods=['POST'])
 def upload_image():
     if 'file' not in request.files:
@@ -116,6 +126,10 @@ def upload_image():
         flash('No image selected for uploading')
         return redirect(request.url)
     if file and allowed_file(file.filename):
+        global run_loop_flag
+        if(run_loop_flag % 2 == 1):
+            engine.endLoop()
+            run_loop_flag += 1
         filename = secure_filename(file.filename)
         file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
         # print('upload_image filename: ' + filename)
@@ -126,7 +140,7 @@ def upload_image():
         thickness = 2
         img      = cv2.imread(os.path.join(app.config['UPLOAD_FOLDER'], filename))
         org_img = img.copy()
-        text_img = img.copy()
+#         text_img = img.copy()
         gray     = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         blur     = cv2.GaussianBlur(gray,(3,3),0)
         thres    = cv2.adaptiveThreshold(blur,255,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY,5,4)
@@ -137,8 +151,8 @@ def upload_image():
         inter_img = th3.copy()
         empty_rows = []
         good_rows = []
-        empty_cols = []
-        check_count = []
+#         empty_cols = []
+#         check_count = []
         dim = img.shape
         for i in range(th3.shape[0]):
             if np.mean(255-th3[i,:]) ==0:
@@ -195,7 +209,7 @@ def upload_image():
                 resized  = resized/255
                 pred = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'ignore', 'j', 'k', 'l', 'm', 'n', 'numeric', 'o', 'p', 'q', 'r', 's', 'space', 't', 'u', 'upper', 'v', 'w', 'x', 'y', 'z']
                 ans1 = pred[np.argmax(model.predict(np.expand_dims(resized,axis=0)))]
-                print(ans1)
+#                 print(ans1)
                 if(ans1 != "ignore"):
                     if(ans1 == "upper"):
                         upper_flag = 1
@@ -218,11 +232,11 @@ def upload_image():
         text = ""
         for i in ans:
             text += i
+#         engine = pyttsx3.init()
+        engine.say(text)
+        engine.runAndWait()
+        run_loop_flag += 1
 
-#         engine.say(text)
-#         engine.runAndWait()
-#         engine.endLoop()
-#         engine.stop()
         flash(text)
         return render_template('index.html')
     else:
@@ -237,29 +251,73 @@ def display_image(filename):
 
 @app.route('/t_to_b', methods=['POST'])
 def t_to_b():
+    global run_loop_flag
+    if(run_loop_flag % 2 == 1):
+        engine.endLoop()
+        run_loop_flag += 1
     features = [x for x in request.form.values()]
     org_text = features[0]
     if(len(org_text)>0):
         s = text_to_braille(org_text)
-#         engine.say(org_text)
-#         engine.runAndWait()
+        print("ans")
         flash(s)
+        engine.say(org_text)
+        engine.runAndWait()
+        run_loop_flag += 1
     else:
         flash("no input")
     return render_template('ttob.html')
 
 @app.route('/b_to_t', methods=['POST'])
 def b_to_t():
+    global run_loop_flag
+    if(run_loop_flag % 2 == 1):
+        engine.endLoop()
+        run_loop_flag += 1
     features = [x for x in request.form.values()]
     org_text = features[0]
     if(len(org_text)>0):
         s = braille_to_english(org_text)
-#         engine.say(org_text)
-#         engine.runAndWait()
+        engine.say(s.replace("<br>",""))
+        engine.runAndWait()
+        run_loop_flag += 1
         flash(s)
+
     else:
         flash("no input")
     return render_template('ttob.html')
+
+@app.route('/image_text', methods=['POST'])
+def upload_image_text():
+    if 'file' not in request.files:
+            flash('No file part')
+            return redirect(request.url)
+    file = request.files['file']
+    if file.filename == '':
+        flash('No image selected for uploading')
+        return redirect(request.url)
+    if file and allowed_file(file.filename):
+        global run_loop_flag
+        if(run_loop_flag % 2 == 1):
+            engine.endLoop()
+            run_loop_flag += 1
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        img_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        org_text= pytesseract.image_to_string(Image.open(img_path))
+        print(org_text)
+        if(type(org_text) != type(None)):
+            s = text_to_braille(org_text)
+        else:
+            s = 'No text found'
+        flash(s)
+        engine.say(org_text)
+        engine.runAndWait()
+        run_loop_flag += 1
+        return render_template('index1.html')
+    else:
+        flash('Allowed image types are - png, jpg, jpeg, gif')
+        return redirect("home")
 
 if __name__ == "__main__":
     app.run()
